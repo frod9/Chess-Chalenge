@@ -14,14 +14,25 @@ public class MyBot : IChessBot
     
     
     Move moveToPlay = Move.NullMove;
-    Move curr_move = Move.NullMove;
     Move bestmove = Move.NullMove;
     bool white;
     int set_depth = 4;
     double score = 0;
 
-    public Move Think(Board board, Timer timer)
+    //3:00
+    //I know it's hopeless, crown of thorns, blood on the roses
+
+    public Move Think(Board board, Timer timer) 
     {
+        /*
+             * TIME TO PANIC I THINK IDK I NEED A BETTER IMPLEMENTATION OF THIS
+             * IN CASE IM NOT PLAYING A 1 MINUTE GAME
+             * HINT: GameStartTimeMilliseconds 
+             * IDK HOW C# WORKS HELP
+            */
+        if (timer.MillisecondsRemaining <= 2500) set_depth = 3;
+            
+            
         white = board.IsWhiteToMove;
         Move[] allMoves = board.GetLegalMoves();
         Random rng = new();
@@ -35,17 +46,14 @@ public class MyBot : IChessBot
     }
     double maxi(Board board, int depth)
     {
-        if (depth == 0)
-        {
-            return Eval(board);
-        }
+        if (depth == 0) return Eval(board);
         
         double max = double.NegativeInfinity;
         Move[] moves = board.GetLegalMoves();
         foreach (Move i in moves)
         {
             board.MakeMove(i);
-            if (board.IsDraw() && ((Eval(board) > 0 && white) || (Eval(board) < 0 && !white)))
+            if (board.IsDraw()&& ((Eval(board) > 0 && white) || (Eval(board) < 0 && !white)))
             {
                 board.UndoMove(i);
                 continue;
@@ -54,12 +62,8 @@ public class MyBot : IChessBot
             if (score > max)
             {
                 max = score;
-                if (depth == set_depth)
-                {
-                    
-                    bestmove = i;
-                    //Console.WriteLine(bestmove.ToString());
-                }
+                if (depth == set_depth) bestmove = i;
+
 
             }
 
@@ -72,10 +76,7 @@ public class MyBot : IChessBot
 
     double mini(Board board, int depth)
     {
-        if (depth == 0)
-        {
-            return Eval(board);
-        }
+        if (depth == 0) return Eval(board);
         double min = double.PositiveInfinity;
         Move[] moves = board.GetLegalMoves();
         foreach (Move i in moves)
@@ -83,10 +84,8 @@ public class MyBot : IChessBot
             board.MakeMove(i);
             
             score = maxi(board, depth - 1);
-            if (score < min)
-            {
-                min = score;
-            }
+
+            if (score < min) min = score;
 
             board.UndoMove(i);
         }
@@ -95,36 +94,39 @@ public class MyBot : IChessBot
 
     public int Eval(Board board)
     {
+        int side = board.IsWhiteToMove ? 1 : -1;
         int pos_eval = 0;
         PieceList pawn = board.GetPieceList((PieceType)1, true);
         PieceList king = board.GetPieceList((PieceType)6, true);
 
-        
-        if (board.HasKingsideCastleRight(white) || board.HasQueensideCastleRight(white))
-        {
-            pos_eval += 200;
-        }
-        else if (!board.HasKingsideCastleRight(!white) || !board.HasQueensideCastleRight(!white))
-        {
-            pos_eval += 200;
-        }
+        if (board.IsDraw()) pos_eval -= 500;
 
-        
+        if (side > 0 )
+        {
+            
+            if (board.HasKingsideCastleRight(white) || board.HasQueensideCastleRight(white)) pos_eval += 200;
+            
+            foreach (Piece k in king)
+            {
+                Square curr_square = k.Square;
+                if(curr_square.Rank <= 0) pos_eval += 250;
+            }
 
-        /*
+        }
         else
         {
-            if (board.HasKingsideCastleRight(white) || board.HasQueensideCastleRight(white))
-            {
-                pos_eval += 20;
-            }
-            else if (!board.HasKingsideCastleRight(!white) || !board.HasQueensideCastleRight(!white))
-            {
-                pos_eval += 20;
-            }
-        }*/
-
             
+            if (!board.HasKingsideCastleRight(white) || !board.HasQueensideCastleRight(white)) pos_eval += 200;
+            foreach (Piece k in king)
+            {
+                Square curr_square = k.Square;
+                if (curr_square.Rank <= 7) pos_eval += 250;
+            }
+        }
+        
+        
+
+
         /*
         foreach (Piece k in king)
         {
@@ -150,7 +152,7 @@ public class MyBot : IChessBot
 
         }
 
-        int side = board.IsWhiteToMove ? 1 : -1;
+       
 
         pos_eval *= side;
 
